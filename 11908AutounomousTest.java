@@ -5,6 +5,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.Blinker;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+enum Direction {
+    FORWARD,
+    BACKWARD,
+    LEFT,
+    RIGHT
+}
 
 @Autonomous(name="Shift: Test Auto", group="Robot")
 public class Autonomous11908Test extends LinearOpMode {
@@ -19,7 +27,7 @@ public class Autonomous11908Test extends LinearOpMode {
     private DcMotor front_left_drive;
     private DcMotor front_right_drive;
     
-    static final double COUNTS_PER_CM = (28/(7.5*Math.PI)); // COUNTS_PER_REV / (WHEEL_DIAMETER_CM*PI)
+    static final double COUNTS_PER_CM = (560/(7.5*Math.PI)); // COUNTS_PER_REV / (WHEEL_DIAMETER_CM*PI)
     
     @Override
     public void runOpMode() {
@@ -34,27 +42,193 @@ public class Autonomous11908Test extends LinearOpMode {
         
         front_left_drive.setDirection(DcMotor.Direction.REVERSE);
         back_left_drive.setDirection(DcMotor.Direction.REVERSE);
+        
         ArmRotation.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         ClawWrist.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         LinearHexMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        front_left_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        front_right_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        back_left_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        back_right_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        
+        front_left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        front_right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        back_left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        back_right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         waitForStart();
-        move(20.0, 20, 1.0);
+        //move(10.0, Direction.FORWARD, 0.7);
+        //move(10.0, Direction.LEFT, 0.7);
+        //move(10.0, Direction.BACKWARD, 0.7);
+        //move(10.0, Direction.RIGHT, 0.7);
+        rotate(180, 0.7);
     }
     
-    public void move(double distance, int direction, double timeout) {
-        front_left_drive.setTargetPosition(front_left_drive.getCurrentPosition() + (int)(distance * COUNTS_PER_CM));
-        front_right_drive.setTargetPosition(front_right_drive.getCurrentPosition() + (int)(distance * COUNTS_PER_CM));
-        back_left_drive.setTargetPosition(back_left_drive.getCurrentPosition() + (int)(distance * COUNTS_PER_CM));
-        back_right_drive.setTargetPosition(back_right_drive.getCurrentPosition() + (int)(distance * COUNTS_PER_CM));
+    public void move(double distance, Direction direction, double timeout) {
+        int front_left_distance = (int)-(distance * COUNTS_PER_CM);
+        int front_right_distance = (int)-(distance * COUNTS_PER_CM);
+        int back_left_distance = (int)-(distance * COUNTS_PER_CM);
+        int back_right_distance = (int)-(distance * COUNTS_PER_CM);
+        String direction_string = "UNKNOWN";
+        switch (direction) {
+            case FORWARD: {
+                front_left_distance = (int)-(distance * COUNTS_PER_CM);
+                front_right_distance = (int)-(distance * COUNTS_PER_CM);
+                back_left_distance = (int)-(distance * COUNTS_PER_CM);
+                back_right_distance = (int)-(distance * COUNTS_PER_CM);
+                direction_string = "FORWARD";
+                break;
+            }
+            case BACKWARD: {
+                front_left_distance = (int)(distance * COUNTS_PER_CM);
+                front_right_distance = (int)(distance * COUNTS_PER_CM);
+                back_left_distance = (int)(distance * COUNTS_PER_CM);
+                back_right_distance = (int)(distance * COUNTS_PER_CM);
+                direction_string = "BACKWARD";
+                break;
+            }
+            case LEFT: {
+                front_left_distance = (int)-(distance * COUNTS_PER_CM);
+                front_right_distance = (int)-(distance * COUNTS_PER_CM);
+                back_left_distance = (int)(distance * COUNTS_PER_CM);
+                back_right_distance = (int)(distance * COUNTS_PER_CM);
+                direction_string = "LEFT";
+                break;
+            }
+            case RIGHT: {
+                front_left_distance = (int)(distance * COUNTS_PER_CM);
+                front_right_distance = (int)(distance * COUNTS_PER_CM);
+                back_left_distance = (int)-(distance * COUNTS_PER_CM);
+                back_right_distance = (int)-(distance * COUNTS_PER_CM);
+                direction_string = "RIGHT";
+                break;
+            }
+        }
+        int front_left_goal = (front_left_drive.getCurrentPosition() + front_left_distance);
+        int front_right_goal = (front_right_drive.getCurrentPosition() + front_right_distance);
+        int back_left_goal = (back_left_drive.getCurrentPosition() + back_left_distance);
+        int back_right_goal = (back_right_drive.getCurrentPosition() + back_right_distance);
+        telemetry.addData("Going to",  "%7d %7d %7d %7d",
+            front_left_goal,
+            front_right_goal,
+            back_left_goal,
+            back_right_goal
+        );
+        telemetry.addData("Direction: ", direction_string);
+        front_left_drive.setTargetPosition(front_left_goal);
+        front_right_drive.setTargetPosition(front_right_goal);
+        back_left_drive.setTargetPosition(back_left_goal);
+        back_right_drive.setTargetPosition(back_right_goal);
         
         front_left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         front_right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         back_left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         back_right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         
-        front_left_drive.setPower(0.3);
-        front_right_drive.setPower(0.3);
-        back_left_drive.setPower(0.3);
-        back_right_drive.setPower(0.3);
+        front_left_drive.setPower(0.2);
+        front_right_drive.setPower(0.2);
+        back_left_drive.setPower(0.76);
+        back_right_drive.setPower(0.76);
+        
+        while (
+            opModeIsActive() &&
+            front_left_drive.isBusy() &&
+            front_right_drive.isBusy() &&
+            back_left_drive.isBusy() &&
+            back_right_drive.isBusy()
+        ) {
+                telemetry.addData("Going to", "%7d %7d %7d %7d",
+                    front_left_goal,
+                    front_right_goal,
+                    back_left_goal,
+                    back_right_goal
+                );
+                telemetry.addData("Direction: ", direction_string);
+                telemetry.addData("Front Left Running to", " %7d :%7d", front_left_goal, front_left_drive.getCurrentPosition());
+                telemetry.addData("Front Right Running to", " %7d :%7d", front_right_goal, front_right_drive.getCurrentPosition());
+                telemetry.addData("Back Left Running to", " %7d :%7d", back_left_goal, back_left_drive.getCurrentPosition());
+                telemetry.addData("Back Right Running to", " %7d :%7d", back_right_goal, back_right_drive.getCurrentPosition());
+                telemetry.update();
+            }
+        front_left_drive.setPower(0);
+        front_right_drive.setPower(0);
+        back_left_drive.setPower(0);
+        back_right_drive.setPower(0);
+        
+        front_left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        front_right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        back_left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        back_right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        sleep((long)(timeout*1000));
+    }
+    
+    public void rotate(double degrees, double timeout) {
+        degrees = degrees/2;
+        int front_left_distance = (int)-(degrees * COUNTS_PER_CM);
+        int front_right_distance = (int)(degrees * COUNTS_PER_CM);
+        int back_left_distance = (int)-(degrees * COUNTS_PER_CM);
+        int back_right_distance = (int)(degrees * COUNTS_PER_CM);
+        String direction_string = "UNKNOWN";
+        if (degrees > 0) {
+            direction_string = "RIGHT";
+        } else if (degrees < 0) {
+            direction_string = "LEFT";
+            degrees = -(degrees);
+        }
+        int front_left_goal = (front_left_drive.getCurrentPosition() + front_left_distance);
+        int front_right_goal = (front_right_drive.getCurrentPosition() + front_right_distance);
+        int back_left_goal = (back_left_drive.getCurrentPosition() + back_left_distance);
+        int back_right_goal = (back_right_drive.getCurrentPosition() + back_right_distance);
+        telemetry.addData("Going to",  "%7d %7d %7d %7d",
+            front_left_goal,
+            front_right_goal,
+            back_left_goal,
+            back_right_goal
+        );
+        telemetry.addData("Direction: ", direction_string);
+        front_left_drive.setTargetPosition(front_left_goal);
+        front_right_drive.setTargetPosition(front_right_goal);
+        back_left_drive.setTargetPosition(back_left_goal);
+        back_right_drive.setTargetPosition(back_right_goal);
+        
+        front_left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        front_right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        back_left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        back_right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        
+        front_left_drive.setPower(0.2);
+        front_right_drive.setPower(0.2);
+        back_left_drive.setPower(0.76);
+        back_right_drive.setPower(0.76);
+        
+        while (
+            opModeIsActive() &&
+            front_left_drive.isBusy() &&
+            front_right_drive.isBusy() &&
+            back_left_drive.isBusy() &&
+            back_right_drive.isBusy()
+        ) {
+                telemetry.addData("Going to", "%7d %7d %7d %7d",
+                    front_left_goal,
+                    front_right_goal,
+                    back_left_goal,
+                    back_right_goal
+                );
+                telemetry.addData("Direction: ", direction_string);
+                telemetry.addData("Front Left Running to", " %7d :%7d", front_left_goal, front_left_drive.getCurrentPosition());
+                telemetry.addData("Front Right Running to", " %7d :%7d", front_right_goal, front_right_drive.getCurrentPosition());
+                telemetry.addData("Back Left Running to", " %7d :%7d", back_left_goal, back_left_drive.getCurrentPosition());
+                telemetry.addData("Back Right Running to", " %7d :%7d", back_right_goal, back_right_drive.getCurrentPosition());
+                telemetry.update();
+            }
+        front_left_drive.setPower(0);
+        front_right_drive.setPower(0);
+        back_left_drive.setPower(0);
+        back_right_drive.setPower(0);
+        
+        front_left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        front_right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        back_left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        back_right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        sleep((long)(timeout*1000));
     }
 }
